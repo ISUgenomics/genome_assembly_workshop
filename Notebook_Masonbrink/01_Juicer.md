@@ -48,6 +48,8 @@ wc -l AtHic_R1.fastq
 #coverage is reads multiplied by read length, then divided by genome size
 (70,478,750 *300)/192,720,089 = 109.7x
 
+The
+
 mkdir splits; cd splits
 split -a 3 -l 10000000 -d --additional-suffix=_R1.fastq ../fastq/AtHic_R1.fastq &
 split -a 3 -l 10000000 -d --additional-suffix=_R2.fastq ../fastq/AtHic_R1.fastq &
@@ -63,3 +65,48 @@ I have kept using 1.5.7, as our 1.6 module has problems
 ml juicer/1.5.7;ml bwa; juicer.sh -d /work/gif3/masonbrink/USDA/02_JuicerTutorial -p chrom.sizes -s none -z references/Genome.fasta  -q nova -Q 2:00:00 -l nova -L 12:00:00 -t 8 
 
 ```
+
+
+### Desired results
+A merged_nodups.txt file is all that you'll need to run the next step of the pipeline
+```
+ls -lrth /work/gif3/masonbrink/USDA/02_JuicerTutorial/aligned
+
+-rw-r--r--. 1 remkv6 its-hpc-nova-gif 695M Jun 19 17:05 merged_sort.txt
+-rw-r--r--. 1 remkv6 its-hpc-nova-gif 2.8M Jun 19 17:06 opt_dups.txt
+-rw-r--r--. 1 remkv6 its-hpc-nova-gif  46M Jun 19 17:06 dups.txt
+-rw-r--r--. 1 remkv6 its-hpc-nova-gif 647M Jun 19 17:06 merged_nodups.txt
+-rw-r--r--. 1 remkv6 its-hpc-nova-gif 2.2G Jun 19 17:09 abnormal.sam
+-rw-r--r--. 1 remkv6 its-hpc-nova-gif    0 Jun 19 17:09 unmapped.sam
+-rw-r--r--. 1 remkv6 its-hpc-nova-gif 1.9K Jun 19 17:10 inter.txt
+-rw-r--r--. 1 remkv6 its-hpc-nova-gif 8.0K Jun 19 17:10 inter_hists.m
+-rw-r--r--. 1 remkv6 its-hpc-nova-gif 1.9K Jun 19 17:10 inter_30.txt
+-rw-r--r--. 1 remkv6 its-hpc-nova-gif 7.8K Jun 19 17:10 inter_30_hists.m
+-rw-r--r--. 1 remkv6 its-hpc-nova-gif    1 Jun 19 17:10 collisions.txt
+-rw-r--r--. 1 remkv6 its-hpc-nova-gif  19M Jun 19 17:12 inter_30.hic
+-rw-r--r--. 1 remkv6 its-hpc-nova-gif  20M Jun 19 17:12 inter.hic
+drwxr-sr-x. 2 remkv6 its-hpc-nova-gif    2 Jun 19 17:13 inter_30_contact_domains
+
+```
+
+### Troublshooting common problems
+
+##### Deduplication is not finishing
+```
+If this occurs, it is likely due to a low complexity region that has too many reads and thus too much depth for deduplication and becomes a memory hog without any progress. 
+
+You can create a blacklist for these regions in your genome. Typically you can find those regions by running a repeat finder on your genome, and then masking those regions so reads will not map there. Then before you run 3ddna you can swap your genome back to the unmasked version.  Tandem repeats and low complexity repeats are usually the culprit, ribosomal DNA may cause problems as well.  
+```
+
+##### My juicer script wont submit any jobs
+```
+Juicer has not been modified suitably to use your HPC system. If this is not the issue, then it is likely that you must make -q and -l match the names of your queue's.   
+```
+
+##### My alignments are not finishing
+```
+Create a larger number of split fastq files within splits/.
+```
+
+
+
