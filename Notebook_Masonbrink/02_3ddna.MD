@@ -82,6 +82,9 @@ Telomeres and Centromeres
 
 shift select a contig and then shift select another contig and you will lag.
 ```
+### How to see and fix misjoins and inversions
+https://gitlab.com/wtsi-grit/rapid-curation/-/blob/main/Interpreting_HiC_Maps_guide.pdf
+
 
 Saving your work (do it often!)
 ```
