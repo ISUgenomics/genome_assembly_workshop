@@ -208,7 +208,7 @@ _**Low Misassembly Rates**_: It is slow but Ensures high-quality assemblies.
 **Working Directory:**
 `/project/gif_vrsc_workshop/GenomeAssemblyWorkshop/Day1/02_Unicycler`
 
-* The main command (with only Illumina) takes about 35-45 mins to run::
+* The main command (with only Illumina) takes about 30-45 mins to run::
 
 ```
 time /project/gif_vrsc_workshop/software/Unicycler/unicycler-runner.py \
@@ -231,9 +231,100 @@ time /project/gif_vrsc_workshop/software/Unicycler/unicycler-runner.py \
 --spades_options "-m 2048" \
 -o MRE162_Hybrid
 ```
+#### Assembly stats:
+We can check the headers in the `assembly.fasta` file:
+
+```
+grep '^>' 02_Unicycler/MRE162_Illumina/assembly.fasta
+>1 length=687924 depth=1.00x
+>2 length=449850 depth=1.03x
+>3 length=420964 depth=1.07x
+>4 length=378726 depth=0.95x
+........................
+........................
+>94 length=110 depth=1.33x
+>95 length=106 depth=1.58x
+>96 length=104 depth=2.09x
+>97 length=103 depth=1.89x
+```
+
+```
+grep '^>' MRE162_Hybrid/assembly.fasta
+>1 length=4686249 depth=1.00x
+>2 length=76850 depth=1.03x circular=true
+>3 length=232 depth=1.00x
+>4 length=171 depth=1.00x
+```
+
+We can also any program to find the stats, for example `bbstats`:
+
+
+* Illumina Assembly:
+
+```
+/project/gif_vrsc_workshop/software/bbmap/stats.sh
+
+MRE162_Illumina/assembly.fasta
+A       C       G       T       N       IUPAC   Other   GC      GC_stdev
+0.2472  0.2531  0.2526  0.2471  0.0000  0.0000  0.0000  0.5057  0.0487
+
+Main genome scaffold total:             24
+Main genome contig total:               24
+Main genome scaffold sequence total:    4.785 MB
+Main genome contig sequence total:      4.785 MB        0.000% gap
+Main genome scaffold N/L50:             3/940.198 KB
+Main genome contig N/L50:               3/940.198 KB
+Main genome scaffold N/L90:             6/360.277 KB
+Main genome contig N/L90:               6/360.277 KB
+Max scaffold length:                    1.315 MB
+Max contig length:                      1.315 MB
+Number of scaffolds > 50 KB:            7
+% main genome in scaffolds > 50 KB:     97.79%
+
+```
+* Hybrid Assembly:
+
+```
+/project/gif_vrsc_workshop/software/bbmap/stats.sh Hybrid/assembly.fasta
+A       C       G       T       N       IUPAC   Other   GC      GC_stdev
+0.2470  0.2522  0.2535  0.2473  0.0000  0.0000  0.0000  0.5057  0.0363
+
+Main genome scaffold total:             4
+Main genome contig total:               4
+Main genome scaffold sequence total:    4.765 MB
+Main genome contig sequence total:      4.765 MB        0.000% gap
+Main genome scaffold N/L50:             1/4.687 MB
+Main genome contig N/L50:               1/4.687 MB
+Main genome scaffold N/L90:             1/4.687 MB
+Main genome contig N/L90:               1/4.687 MB
+Max scaffold length:                    4.687 MB
+Max contig length:                      4.687 MB
+Number of scaffolds > 50 KB:            2
+% main genome in scaffolds > 50 KB:     99.99%
+
+```
+**Assembly Stats terms:**
+
+*N50*: The length of the shortest contig at 50% of the total genome length. A higher N50 indicates better assembly contiguity.
+
+*L50:* & The smallest number of contigs that cover 50% of the genome. A lower L50 indicates fewer, larger contigs.
+
+*Total Length:* The combined length of all contigs. It should be close to the estimated genome size.
+
+*Number of Contigs:* Fewer contigs suggest a more contiguous assembly.
+
+*Largest Contig:* The length of the longest contig in the assembly. Larger contigs are preferable.
+
+*GC Content:* The percentage of G and C bases. It should match the known GC content of the organism.
+
+*BUSCO Scores:* Completeness of the assembly based on benchmarking universal single-copy orthologs. Higher scores indicate a more complete assembly.
+
+**Visualization of graphs**
+One really cool way to actually visualize the GFA files, is to download the GFA file to your local computer and view them on a software like **Bandage** (https://rrwick.github.io/Bandage/) is a tool for visualizing de novo assembly graphs. It supports various graph formats (Velvet, SPAdes, Trinity, ASQG, GFA) and provides features like automatic node positioning, zooming, panning, node reshaping, color-coding, labeling, and BLAST search integration. Bandage can be used to assess assembly quality, identify problematic regions, resolve ambiguities, and extract sequences. It is available for OS X, Linux, and Windows, with binaries or source code available on GitHub.
+
 
 **A subset of reads:**
 
 Directory: `/project/gif_vrsc_workshop/GenomeAssemblyWorkshop/Day1/00_ReadSubset`
 
-**Visualization of graphs**
+You can all try out assembling the subset of reads within this folder. This should only take about 10 mins or so. However the assembly may not be complete.
