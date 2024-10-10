@@ -5,9 +5,8 @@ workdir: `/project/isu_gif_vrsc/satheesh/07_AIUserForum_GenomeAssembly_Workshop_
 
 ## Feedback from first genome assembly workshop
 
-1.	More explanation of what the commands are doing, and why each program was chosen.
-2.	More explanation of why each step is done, what is accomplished in each step, slowing down the teaching and explaining what is going on at each step in the pipeline. More background information on how the genome assembly steps were developed.
-
+1. More explanation of what the commands are doing, and why each program was chosen.
+2. More explanation of why each step is done, what is accomplished in each step, slowing down the teaching and explaining what is going on at each step in the pipeline. More background information on how the genome assembly steps were developed.
 
 ## Data
 
@@ -26,11 +25,12 @@ hifiasm -o AT.asm -t 36 01_Data/AT_Hifi.fastq.gz
 
 awk '/^S/ { print ">"$2; print $3 }' AT.asm.bp.p_ctg.gfa > AT.asm.bp.p_ctg.fa
 ```
+
 The assembly has taken ~8 hours to run.
 
-## Assembling chromosome 2 of *A. thaliana*
+## Assembling chromosome 2 of _A. thaliana_
 
-### Extracting the reads for chromosome 2 of *A. thaliana*
+### Extracting the reads for chromosome 2 of _A. thaliana_
 
 ```mermaid
 graph TD
@@ -58,7 +58,7 @@ cd ..
 
 The whole genome and the corresponding gff3 files were downloaded from [Ensembl](https://plants.ensembl.org/Arabidopsis_thaliana/Info/Index). The chromosome 2 genomic and gff3 files were downloaded from Ensembl as well.
 
-## Step 1. Map reads to chromosome 2 of *A. thaliana*
+## Step 1. Map reads to chromosome 2 of _A. thaliana_
 
 We are going to use `minimap2` to map the HiFi reads to the reference genome. `minimap2` is a versatile and fast sequence aligner that is widely used for mapping long reads, such as PacBio and Oxford Nanopore reads, to reference genomes. It provides several alignment presets optimized for different sequencing technologies and data types, ensuring accurate and efficient mapping results.
 
@@ -76,9 +76,10 @@ Here, the `-ax` switch specifies the alignment preset, which determines how the 
 `-t 20`: Use 20 threads.
 
 Takes about 47 minutes to run.
+
 <pre>47m26.619s</pre>
 
-The output file `03_MinimapAlignment/mapped_reads.sam` contains the mapped reads in SAM format. 
+The output file `03_MinimapAlignment/mapped_reads.sam` contains the mapped reads in SAM format.
 
 ## Step 2. Convert SAM to BAM and Sort using Samtools
 
@@ -90,8 +91,34 @@ The SAM format is a human-readable text file that contains sequence alignment in
 
 ```bash
 module load samtools
-
-samtools view -bS 03_MinimapAlignment/mapped_reads.sam > 03_MinimapAlignment/mapped_reads.bam
-
-samtools sort 03_MinimapAlignment/mapped_reads.bam > 03_MinimapAlignment/mapped_reads.sorted.bam
 ```
+
+#### `samtools view`
+
+`samtools view` is used to convert between file formats, such as from SAM to BAM. It can also be used to filter alignments based on specific criteria, such as mapping quality or read flags. The `-bS` options indicate that the output should be in BAM format (`-b`) and that the input is in SAM format (`-S`).
+
+```bash
+time samtools view -bS 03_MinimapAlignment/mapped_reads.sam > 03_MinimapAlignment/mapped_reads.bam
+```
+
+<pre>
+34m8.442s
+</pre>
+
+`samtools view` takes about 34 minutes to run.
+
+### Sorting
+
+`samtools sort` is used to sort alignments in a BAM file. It sorts the alignments based on the coordinate of the read. The output is a new sorted file in the output directory.
+
+```bash
+time samtools sort -@ 20 -o 03_MinimapAlignment/mapped_reads.sorted.bam 03_MinimapAlignment/mapped_reads.bam
+```
+
+<pre>
+3m47.967s
+</pre>
+
+`samtools sort` takes about 4 minutes to run.
+
+## Step 3. Index the Sorted BAM File using Samtools
