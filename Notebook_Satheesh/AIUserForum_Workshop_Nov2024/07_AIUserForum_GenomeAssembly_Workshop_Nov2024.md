@@ -122,3 +122,44 @@ time samtools sort -@ 20 -o 03_MinimapAlignment/mapped_reads.sorted.bam 03_Minim
 `samtools sort` takes about 4 minutes to run.
 
 ## Step 3. Index the Sorted BAM File using Samtools
+
+Indexing a BAM file is crucial for efficient data retrieval, especially for large alignment files. The index allows for quick access to specific regions of the BAM file without scanning through the entire file. This is particularly useful for downstream analysis steps such as variant calling, visualization, and extracting specific genomic regions.
+
+```bash
+samtools index 03_MinimapAlignment/mapped_reads.sorted.bam
+```
+
+## Step 4. Extract Reads Mapped to Chromosome 2 using Samtools
+
+```bash
+time samtools view -b 03_MinimapAlignment/mapped_reads.sorted.bam 2 > 03_MinimapAlignment/mapped_reads.chr2.bam
+```
+
+In this step, `samtools view` is used to extract only the reads that are mapped to chromosome 2 from the sorted BAM file. The `-b` flag specifies that the output should be in BAM format. The value `2` indicates chromosome 2, which allows you to filter and extract reads specifically mapped to this chromosome. The output is saved as a new BAM file (`mapped_reads.chr2.bam`), containing only the reads that align to chromosome 2.
+
+<pre>
+5m46.610s
+</pre>
+
+The time taken for this step is about 6 minutes.
+
+## Step 5. Convert BAM to FASTQ using Samtools
+
+```bash
+mkdir 04_Chr2Fastq
+time samtools fastq -@ 20 03_MinimapAlignment/mapped_reads.chr2.bam > 04_Chr2Fastq/mapped_reads.chr2.fastq
+```
+
+<pre>
+0m22.208s
+</pre>
+
+The time taken for this step is about 22 seconds.
+
+## Step 6. Assemble Reads with Hifiasm
+
+```bash
+module load hifiasm
+
+time hifiasm -o chr2.asm -t 20 -m 10 04_Chr2Fastq/mapped_reads.chr2.fastq
+```
