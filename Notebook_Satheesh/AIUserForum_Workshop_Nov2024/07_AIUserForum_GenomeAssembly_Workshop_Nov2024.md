@@ -3,6 +3,21 @@ This testing is on Ceres.
 Date: `October 10, 2024`  
 workdir: `/project/isu_gif_vrsc/satheesh/07_AIUserForum_GenomeAssembly_Workshop_Nov2024`
 
+<pre>
+Plan:
+	1.	Illumina and HiFi Reads QC
+	2.	GenomeScope
+	3.	Assembly - chr2 - HiFi alone Hifiasm
+	4.	Mapping back reads to assemble.
+	5.	Merqury
+	6.	BUSCO + Repeat masking
+	7.	BRAKER3/HELIXER
+	8.	BUSCO/OrthoFinder
+
+	•	Overlap of participants
+	•	Background of participants
+</pre>
+
 ## Feedback from first genome assembly workshop
 
 1. More explanation of what the commands are doing, and why each program was chosen.
@@ -506,3 +521,232 @@ It has taken `NanoPlot` about 35 minutes to run for the full data set.
 ![](assets/images/03_QC_Nanoplot/WeightedLogTransformed_HistogramReadlength.png)
 
 ![](assets/images/03_QC_Nanoplot/Yield_By_Length.png)
+
+Try running it on the reduced data set.
+
+Running analysis on Atlas.
+
+## Braker
+
+
+### RNAseq with STAR
+
+workdir:`/project/gif_vrsc_workshop/Eukaryotes/satheesh/03_TexasWorkshop`
+
+```bash
+wget -nc ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR238/053/SRR23866853/SRR23866853_1.fastq.gz
+wget -nc ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR238/053/SRR23866853/SRR23866853_2.fastq.gz
+```
+
+### Trimming reads
+
+```bash
+ml bbmap
+```
+
+Script: `01_Adapter_Quality_Trimming.sh`
+
+The `adapters.fa` file was obtained from here: <https://github.com/BioInfoTools/BBMap/blob/a9ceda047a7c918dc090de0fdbf6f924292d4a1f/resources/adapters.fa#L4>
+
+<details>
+<summary>Trimming</summary>
+
+```bash
+#!/bin/bash
+
+# Set variables
+input_dir="arabidopsis_rnaseq"
+clean_data_dir="cleaned_rnaseq"
+log_dir="logs"
+adapters="adapters.fa"
+
+# Create directories if they don't exist
+mkdir -p "$clean_data_dir"
+mkdir -p "$log_dir"
+
+# Process RNAseq reads
+for file in "$input_dir"/*_1.fastq.gz; do
+    base=$(basename "$file" _1.fastq.gz)
+    r1_filename="${base}_1.fastq.gz"
+    r2_filename="${base}_2.fastq.gz"
+
+    # Check if the paired file exists
+    if [[ ! -f "$input_dir/$r2_filename" ]]; then
+        echo "Error: Paired file '$input_dir/$r2_filename' not found. Skipping."
+        continue
+    fi
+
+    # Combined adapter and quality trimming
+    bbduk.sh -Xmx1g in1="$input_dir/$r1_filename" in2="$input_dir/$r2_filename" \
+             out1="$clean_data_dir/${base}_1.clean.fastq.gz" out2="$clean_data_dir/${base}_2.clean.fastq.gz" \
+             ref="$adapters" ktrim=r k=23 mink=11 hdist=1 tpe tbo \
+             qtrim=rl trimq=20 minlen=25 overwrite=True \
+             1> "$log_dir/${base}_trim.log" 2>&1 || {
+        echo "Error: Trimming failed for '$base'. Skipping."
+        continue
+    }
+done
+```
+</details>
+
+```bash
+time bash 01_Adapter_Quality_Trimming.sh
+```
+
+<pre>
+real	0m57.729s
+</pre>
+
+Now that we have the cleaned reads, we can run `STAR` to align the reads to the reference genome.
+
+```bash
+mkdir references
+cd references
+wget https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/release-60/fasta/arabidopsis_thaliana/dna/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz
+
+wget https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/release-60/gff3/arabidopsis_thaliana/Arabidopsis_thaliana.TAIR10.60.gff3.gz
+
+cd ..
+```
+
+### Converting GFF3 to GTF
+
+```bash
+conda activate genome_assembly
+# conda install bioconda::gffread
+
+unpigz references/Arabidopsis_thaliana.TAIR10.60.gff3.gz
+gffread references/Arabidopsis_thaliana.TAIR10.60.gff3 -T -o references/Athaliana.gtf
+
+unpigz references/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz
+```
+
+Script:`02_generate_star_index.sh`
+
+<details>
+summary>Generating STAR index</summary>
+
+```bash
+#!/bin/bash
+
+module load star
+
+# Set variables
+ref_genome="references/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa"  # Path to your reference genome file
+output_dir="references/STAR_INDEX"      # Directory where STAR will store the index
+genome_name="arabidopsis"                        # Name of the genome for output files
+threads=8                                   # Number of threads to use for indexing
+
+# Create output directory if it doesn't exist
+mkdir -p "$output_dir"
+
+# Run STAR to index the reference genome
+STAR --runMode genomeGenerate \
+     --runThreadN "$threads" \
+     --genomeDir "$output_dir" \
+     --genomeFastaFiles "$ref_genome" \
+     --sjdbGTFfile "references/Athaliana.gtf" \
+     --sjdbOverhang 149
+
+# Check for successful indexing
+if [ $? -eq 0 ]; then
+    echo "Indexing completed successfully."
+else
+    echo "Error during indexing. Please check the log files."
+fi
+```
+</details>
+
+```bash
+time bash 02_generate_star_index.sh
+```
+
+<pre>
+real	2m18.352s
+</pre>
+
+```bash
+tree references/
+```
+<pre>
+references/
+├── Arabidopsis_thaliana.TAIR10.60.gff3
+├── Arabidopsis_thaliana.TAIR10.dna.toplevel.fa
+├── Athaliana.gtf
+└── STAR_INDEX
+    ├── chrLength.txt
+    ├── chrNameLength.txt
+    ├── chrName.txt
+    ├── chrStart.txt
+    ├── exonGeTrInfo.tab
+    ├── exonInfo.tab
+    ├── geneInfo.tab
+    ├── Genome
+    ├── genomeParameters.txt
+    ├── Log.out
+    ├── SA
+    ├── SAindex
+    ├── sjdbInfo.txt
+    ├── sjdbList.fromGTF.out.tab
+    ├── sjdbList.out.tab
+    └── transcriptInfo.tab
+
+1 directory, 19 files
+</pre>
+
+### STAR alignment
+
+Script:`03_star_alignment.sh`
+
+<details>
+<summary>STAR alignment</summary>
+
+```bash
+wget -nc ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR261/035/SRR26158835/SRR26158835_1.fastq.gz
+
+wget -nc ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR261/035/SRR26158835/SRR26158835_2.fastq.gz
+```
+
+`-nc` option, or `--no-clobber`, is used to avoid downloading the file if it already exists in the local directory.
+
+</details>
+```bash
+time bash 03_star_alignment.sh
+```
+
+<pre>
+Nov 07 22:47:29 ..... started STAR run
+Nov 07 22:47:29 ..... loading genome
+Nov 07 22:47:51 ..... processing annotations GTF
+Nov 07 22:47:53 ..... inserting junctions into the genome indices
+Nov 07 22:48:03 ..... started 1st pass mapping
+Nov 07 23:15:10 ..... finished 1st pass mapping
+Nov 07 23:15:11 ..... inserting junctions into the genome indices
+Nov 07 23:15:46 ..... started mapping
+Nov 07 23:42:28 ..... finished mapping
+Nov 07 23:42:28 ..... started sorting BAM
+Nov 07 23:42:56 ..... finished successfully
+</pre>
+
+### Extracting bam file for chromosome 2
+
+```bash
+srun -A gif_vrsc_workshop -N1 -c16 --pty bash
+ml samtools
+
+samtools index alignment_results/SRR26158835_Aligned.sortedByCoord.out.bam
+
+time samtools view -b alignment_results/SRR26158835_Aligned.sortedByCoord.out.bam 2 > alignment_results/SRR26158835_chr2.bam
+```
+
+<pre>
+real    0m23.573s
+</pre>
+For the moment, use chr2 from the reference genome for braker analysis. I will update the code to use the filtered reads.
+
+### Extracting chr2 sequence from the reference genome. 
+
+```bash
+samtools faidx references/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa
+samtools faidx references/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa 2 > references/chr2.fa
+```
