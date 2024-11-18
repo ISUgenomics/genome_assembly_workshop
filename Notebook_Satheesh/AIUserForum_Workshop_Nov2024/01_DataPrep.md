@@ -1,13 +1,23 @@
+Setup: installing conda environment for:
 
-## Data QC - Illumina and PacBio HiFi reads
+- NanoPlot
+- Merqury
+- hifiasm
+
+
+
+Data directories: 01_Data and 02_References
+
+ Data QC - Illumina and PacBio HiFi reads
 
 ### Illumina - `FastQC`
 
 ```bash
 module load fastqc
-mkdir 01_FastqcOutput
-time fastqc -o 01_FastqcOutput -t 2 04_Chr2Fastq/AT_Illumina_paired_*fastq
+mkdir 03_IlluminaQC
+time fastqc -o 03_IlluminaQC -t 2 01_Data/AT_Illumina_paired_*fastq
 ```
+
 
 #### Per base sequence quality
 ![](assets/images/fastqc/per_base_quality.png)
@@ -24,11 +34,15 @@ time fastqc -o 01_FastqcOutput -t 2 04_Chr2Fastq/AT_Illumina_paired_*fastq
 ## PacBio HiFi - `nanoplot`
 ```bash
 conda activate genome_assembly
-mkdir 03_QC_Nanoplot
-NanoPlot --fastq data_to_share/AT_Hifi_1.fastq.gz -o 03_QC_Nanoplot --threads 20
+mkdir 04_NanoPlotQC
+NanoPlot --fastq 01_Data/AT_HiFi_chr2.fastq.gz -o 04_NanoPlotQC --threads 20
 ````
 
-It has taken `NanoPlot` about 35 minutes to run for the full data set.
+<pre>
+real    1m31.985s
+</pre>
+
+It has taken `NanoPlot` about 1  minute and 31 seconds to run.
 
 [View Report](assets/images/03_QC_Nanoplot/NanoStats.txt)
 
@@ -49,21 +63,21 @@ It has taken `NanoPlot` about 35 minutes to run for the full data set.
 ## Predicting the genome size with Illumina reads with GenomeScope
 
 ```bash
-mkdir 02_GenomeScope
+mkdir 05_GenomeScope
 module load jellyfish
 time jellyfish count -m 21 -s 100M -t 20 \
-  -C 04_Chr2Fastq/AT_Illumina_paired_*fastq -o 02_GenomeScope/reads.jf
+  -C 01_Data/AT_Illumina_paired_*fastq -o 05_GenomeScope/reads.jf
 ```
 
 - `-m 21`: 21-mers
 - `-s 10M`: 10 million reads # this is the number of reads used to estimate the size of the genome
 - `-t 20`: 20 threads
 
-Takes about 18 seconds to run.
+Takes about 24 seconds to run.
 
 ```bash
 time jellyfish histo \
-  -t 8 02_GenomeScope/reads.jf > 02_GenomeScope/reads.histo
+  -t 8 05_GenomeScope/reads.jf > 05_GenomeScope/reads.histo
 ```
 
 - `jellyfish histo` is used to estimate the size of the genome using the `reads.jf` file. It outputs the size of the genome in the `reads.histo` file.
