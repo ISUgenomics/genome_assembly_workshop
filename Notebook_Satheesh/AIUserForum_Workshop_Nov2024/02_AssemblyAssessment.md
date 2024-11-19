@@ -1,27 +1,25 @@
 ## Run `hifiasm` on the Hifi reads
 
 ```bash
-module load hifiasm
+mkdir 06_Assembly
 
-mkdir 03_Assembly
-
-time hifiasm -o 03_Assembly/chr2_hifi.asm -t 20 -m 10 04_Chr2Fastq/mapped_reads.chr2.filtlong.fastq.gz
+time hifiasm -o 06_Assembly/chr2_hifi.asm -t 20 -m 10 01_Data/AT_HiFi_chr2.fastq.gz
 ```
 
 Time:
 <pre>
-real    3m42.123s
+real    3m48.387s
 </pre>
 
 ### Converting GFA to fa
 
 ```bash
-awk '/^S/ { print ">"$2; print $3 }' 03_Assembly/chr2_hifi.asm.bp.p_ctg.gfa > 03_Assembly/chr2_hifi.asm.bp.p_ctg.fa
+awk '/^S/ { print ">"$2; print $3 }' 06_Assembly/chr2_hifi.asm.bp.p_ctg.gfa > 06_Assembly/chr2_hifi.asm.bp.p_ctg.fa
 ```
 
 The number of contigs: 
 ```bash
-grep ">" -c 03_Assembly/chr2_hifi.asm.bp.p_ctg.fa
+grep ">" -c 06_Assembly/chr2_hifi.asm.bp.p_ctg.fa
 ```
 <pre>
 63
@@ -31,31 +29,20 @@ grep ">" -c 03_Assembly/chr2_hifi.asm.bp.p_ctg.fa
 
 BUSCO (Benchmarking Universal Single-Copy Orthologs) is used to assess the completeness and quality of genome assemblies and annotations by comparing them to a database of conserved single-copy orthologs.
 
-Downloading the Arabidopsis database on ceres.
-
-workdir:`/project/isu_gif_vrsc/satheesh/07_AIUserForum_GenomeAssembly_Workshop_Nov2024/busco`
-
 Going to use the `embryophyta_odb10` database for *Arabidopsis thaliana*.
 
 ```bash
-# requested a node before executing the following commands.
-module load busco5
-busco --download embryophyta_odb10
+software=/project/gif_vrsc_workshop/software/
 ```
-The data base was transferred to Atlas. The next set of steps will be executed on Atlas.
-
-workdir:`/project/isu_gif_vrsc/satheesh/07_AIUserForum_GenomeAssembly_Workshop_Nov2024/busco/08_Compleasm`
+Busco not installed on Atlas.
 
 ```bash
-# 
-software=/project/gif_vrsc_workshop/software/
-
 time $software/compleasm_kit/compleasm.py run -t 20 \
-  -l eukaryota -L 08_Compleasm/busco/busco_downloads/lineages/embryophyta_odb10/ \
-  -a 05_FilteredReadsAssembly/chr2.filtlong_p2000.asm.bp.p_ctg.fa -o 08_Compleasm 
+  -l eukaryota -L 01_Data/busco_downloads/lineages/embryophyta_odb10/ \
+  -a 06_Assembly/chr2_hifi.asm.bp.p_ctg.fa -o 07_Compleasm 
 ```
 <pre>
-real    1m39.890s
+real    4m55.897s
 </pre>
 
 #### Compleasm output
@@ -69,6 +56,7 @@ real    1m39.890s
  # N:255
 </pre>
 
+## Below, compleasm run is not tested
 ### Compleasm: Full genome assembly
 
 ```bash
@@ -110,15 +98,15 @@ tolerable collision rate: 0.001
 Evaluation with `merqury`.
 ```bash
 time $software/meryl-1.4.1/bin/meryl \
-  k=17 count output AT_HiFi.meryl 04_Chr2Fastq/mapped_reads.chr2.filtlong.fastq.gz
-# real    0m30.826s
+  k=17 count output 08_AT_HiFi.meryl 01_Data/AT_HiFi_chr2.fastq.gz
+# real    0m22.237s
 
-mkdir 07_Merqury_Output_HiFi && cd 07_Merqury_Output_HiFi
-$software/merqury/merqury.sh ../AT_HiFi.meryl \
-  ../05_FilteredReadsAssembly/chr2.filtlong_p2000.asm.bp.p_ctg.fa merqury_out
+mkdir 09_Merqury_Output_HiFi && cd 08_Merqury_Output_HiFi
+$software/merqury/merqury.sh ../08_AT_HiFi.meryl \
+  ../06_Assembly/chr2_hifi.asm.bp.p_ctg.fa merqury_out
 ```
 <pre>
-real    0m34.100s
+real    0m22.237s
 ></pre>
 
 ```bash
