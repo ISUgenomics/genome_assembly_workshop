@@ -1,11 +1,31 @@
+---
+title: "Data Preparation"
+authors:
+  - "Viswanathan Satheesh"
+  - "Sivanandan Chudalayandi"
+date: "2024-11-20"
+---
+
 Setup: installing conda environment for:
 
 - NanoPlot
 - Merqury
 - hifiasm
+- gffread
 
+```bash
+# Takes about 7 minutes
+conda env create -f genome_assembly_env.yml
 
+# Check conda environments
+conda info --envs
 
+# Activate conda environment
+conda activate genome_assembly
+
+# List installed packages
+conda list | egrep "nanoplot|merqury|hifiasm|gffread"
+```
 Data directories: 01_Data and 02_References
 
  Data QC - Illumina and PacBio HiFi reads
