@@ -1,12 +1,23 @@
 ---
 title: "Data Preparation"
 authors:
-  - "Viswanathan Satheesh"
   - "Sivanandan Chudalayandi"
+  - "Viswanathan Satheesh"
 date: "2024-11-20"
 ---
 
-Setup: installing conda environment for:
+# Introduction
+
+This tutorial guides you through the essential steps of preparing and quality checking genomic sequencing data for genome assembly. We'll be working with both Illumina short reads and PacBio HiFi long reads from *Arabidopsis thaliana* chromosome 2. The workflow includes:
+
+1. Setting up the computational environment
+2. Quality control of Illumina reads using FastQC
+3. Quality assessment of PacBio HiFi reads using NanoPlot
+4. Genome size estimation using GenomeScope
+
+## Environment Setup
+
+First, we'll create a conda environment with all the necessary tools that are not found on the server:
 
 - NanoPlot
 - Merqury
@@ -14,23 +25,34 @@ Setup: installing conda environment for:
 - gffread
 
 ```bash
-# Takes about 7 minutes
+# Creates a new conda environment with required tools
+# Takes about 7 minutes to complete
 conda env create -f genome_assembly_env.yml
 
-# Check conda environments
+# Verify the environment was created successfully
 conda info --envs
 
-# Activate conda environment
+# Activate the environment to use the installed tools
 conda activate genome_assembly
 
-# List installed packages
+# Verify that all required tools are installed
 conda list | egrep "nanoplot|merqury|hifiasm|gffread"
 ```
-Data directories: 01_Data and 02_References
 
- Data QC - Illumina and PacBio HiFi reads
+## Data Organization
 
-### Illumina - `FastQC`
+Our analysis uses the following directory structure:
+- `01_Data`: Contains raw sequencing data (Illumina and PacBio HiFi reads)
+- `02_References`: Contains reference genome files
+- `03_IlluminaQC`: Will store FastQC results
+- `04_NanoPlotQC`: Will store NanoPlot results
+- `05_GenomeScope`: Will store genome size estimation results
+
+## Quality Control Analysis
+
+### 1. Illumina Data QC using FastQC
+
+FastQC performs quality control checks on Illumina sequencing data. It generates reports with various quality metrics:
 
 ```bash
 module load fastqc
@@ -38,6 +60,7 @@ mkdir 03_IlluminaQC
 time fastqc -o 03_IlluminaQC -t 2 01_Data/AT_Illumina_paired_*fastq
 ```
 
+Key FastQC outputs and their interpretation:
 
 #### Per base sequence quality
 ![](assets/images/fastqc/per_base_quality.png)
@@ -51,20 +74,26 @@ time fastqc -o 03_IlluminaQC -t 2 01_Data/AT_Illumina_paired_*fastq
 #### Adapter content
 ![](assets/images/fastqc/adapter_content.png)
 
-## PacBio HiFi - `nanoplot`
+### 2. PacBio HiFi Read Analysis using NanoPlot
+
+NanoPlot is specifically designed for long-read sequencing data analysis. It provides detailed statistics and visualizations:
+
 ```bash
 conda activate genome_assembly
 mkdir 04_NanoPlotQC
 NanoPlot --fastq 01_Data/AT_HiFi_chr2.fastq.gz -o 04_NanoPlotQC --threads 20
-````
+```
 
 <pre>
 real    1m31.985s
 </pre>
 
-It has taken `NanoPlot` about 1  minute and 31 seconds to run.
+The analysis completed in approximately 1 minute and 31 seconds. The plots above show:
 
-[View Report](assets/images/03_QC_Nanoplot/NanoStats.txt)
+[View Report](assets/images/04_NanoPlotQC/NanoStats.txt)
+- Length vs Quality plots: Demonstrate the relationship between read length and quality scores
+- Read length distributions: Show the distribution of read lengths in both normal and log scales
+- Yield by Length: Indicates cumulative data yield across different read lengths
 
 ![](assets/images/03_QC_Nanoplot/LengthvsQualityScatterPlot_dot.png)
 
@@ -80,7 +109,9 @@ It has taken `NanoPlot` about 1  minute and 31 seconds to run.
 
 ![](assets/images/03_QC_Nanoplot/Yield_By_Length.png)
 
-## Predicting the genome size with Illumina reads with GenomeScope
+### 3. Genome Size Estimation using GenomeScope
+
+GenomeScope uses k-mer frequency distributions to estimate genome characteristics. We first generate k-mer counts using Jellyfish:
 
 ```bash
 mkdir 05_GenomeScope
@@ -89,22 +120,20 @@ time jellyfish count -m 21 -s 100M -t 20 \
   -C 01_Data/AT_Illumina_paired_*fastq -o 05_GenomeScope/reads.jf
 ```
 
-- `-m 21`: 21-mers
-- `-s 10M`: 10 million reads # this is the number of reads used to estimate the size of the genome
-- `-t 20`: 20 threads
+Parameters explained:
+- `-m 21`: Uses 21-mers (subsequences of length 21)
+- `-s 100M`: Allocates hash table size for 100 million reads
+- `-t 20`: Utilizes 20 threads for parallel processing
+- `-C`: Counts k-mers in both forward and reverse complement
 
-Takes about 24 seconds to run.
+Generate the k-mer frequency histogram:
 
 ```bash
 time jellyfish histo \
   -t 8 05_GenomeScope/reads.jf > 05_GenomeScope/reads.histo
 ```
 
-- `jellyfish histo` is used to estimate the size of the genome using the `reads.jf` file. It outputs the size of the genome in the `reads.histo` file.
-
-Takes about 5 seconds to run.
-
-We can now copy the `reads.histo` to our local computer and upload it to [GenomeScope](http://genomescope.org/)
+The resulting `reads.histo` file can be uploaded to [GenomeScope](http://genomescope.org/) for analysis.
 
 ### Interpretation of the images:
 
@@ -130,4 +159,3 @@ _Key Elements in the Plots_
 - Orange Line (errors): Contribution of sequencing errors to the k-mer frequencies.
 - Dashed Lines (kmer-peaks): Peaks corresponding to k-mer coverage of unique and repetitive sequences.
 - Red Dashed Line (cov-threshold): A threshold to distinguish high-coverage k-mers, typically used to identify potential contaminant sequences or highly repetitive regions. This is set at a very high coverage level (around 1000).
-
