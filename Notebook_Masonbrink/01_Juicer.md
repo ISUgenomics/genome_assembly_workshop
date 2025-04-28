@@ -52,14 +52,16 @@ srun -N 1 -p interactive --ntasks-per-node=36 -t 5:00:00 --pty bash
 ### Setting up the references folder
 There are a few folders that you will need to get ready before submitting juicer. <br>
 You will need a reference folder that has your genome.fasta and its BWA-mem index
-```
+```bash
 #move to our workshop directory
 cd /90daydata/shared/
 
 #create your own folder according to your user name
 mkdir $USER ; cd $USER/
+mkdir 01_Juicer; cd 01_Juicer
 
 mkdir references; cd references
+
 cp /project/scinet_workshop2/Bioinformatics_series/wk2_workshop/day2/02_Files/Genome.fasta  .
 
 ml bwa
@@ -70,7 +72,7 @@ cd ../
 It is best to avoid using any special characters in your fasta headers/names. This can cause issues in juicer. If you have a larger genome >700mb that is heavily fragmented >2000 contigs, I would suggest removing anything shorter than 5kb from the assembly before running juicer. The reason is that Juicebox will be dependent on the power of your personal computer, and lots of small contigs will result in lag times for loading different zoom levels of your genome. For smaller genomes with less than 500 contigs the placement of many little contigs will be less cumbersome. Another reason is that typically these little contigs do not have great resolution in juicebox and may result in erroneous scaffolding.
 
 ### Create a chromosome sizes file 
-```
+```bash
 ml samtools
 samtools faidx references/Genome.fasta 
 cut -f 1,2 references/Genome.fasta.fai >chrom.sizes
@@ -78,7 +80,7 @@ cut -f 1,2 references/Genome.fasta.fai >chrom.sizes
 
 ### Create the fastq folder
 Be aware of how I named the fastq files.  Juicer requires that they be named with this extension "_R1.fastq" and "_R2.fastq". Any other naming scheme will fail and they must also be unzipped. 
-```
+```bash
 mkdir fastq; cd fastq/
 cp /project/scinet_workshop2/Bioinformatics_series/wk2_workshop/day2/02_Files/*fastq .
 
@@ -109,13 +111,14 @@ cp /project/scinet_workshop2/Bioinformatics_series/wk2_workshop/day2/02_Files/ne
 mkdir splits; cd splits
 split -a 3 -l 240000 -d --additional-suffix=_R1.fastq ../fastq/2MAtHiCDedup_R1.fastq &
 split -a 3 -l 240000 -d --additional-suffix=_R2.fastq ../fastq/2MAtHiCDedup_R2.fastq &
+cd ..
 ```
 
 ### Run juicer
-```
+```bash
 /90daydata/shared/rick.masonbrink
 
-ml juicer;JUICER juicer.sh -d /90daydata/shared/rick.masonbrink -p chrom.sizes -s none -z references/Genome.fasta -t 8 --assembly
+ml juicer;JUICER juicer.sh -d /90daydata/shared/rick.masonbrink/01_Juicer -p chrom.sizes -s none -z references/Genome.fasta -t 8 --assembly
 ```
 
 
