@@ -76,16 +76,14 @@ module load dna_3d;module load parallel;module load java; bash run-asm-pipeline.
 ### Juicebox evaluation 
 
 **Installation (none, just a download)**
-```
-Download the juicebox software that is appropriate for your personal computer. https://github.com/aidenlab/Juicebox/wiki/Download
-There is an online version, but if your genome is large or you have lots of reads, it will be very slow to load between zooms.  
-```
+Download the juicebox software that is appropriate for your personal computer. https://github.com/aidenlab/Juicebox/wiki/Download <br>
+There is an online version, but if your genome is large or you have lots of reads, it will be very slow to load between zooms.  <br>
+
 
 **Loading your genome into juicebox**
-```
-File, Open, select your HiC file.  Click the plot, otherwise the next step will not work. 
-Assembly, Import Map Assembly, Click your .assembly file. This may take a few minutes to load. 
-```
+File, Open, select your HiC file.  Click the plot, otherwise the next step will not work. <br>
+Assembly, Import Map Assembly, Click your .assembly file. This may take a few minutes to load. <br>
+
 
 **Modification of your assembly in Juicebox**
 * Selecting contigs
