@@ -54,6 +54,10 @@ ml dna_3d; bash run-asm-pipeline.sh --help
 
 ### Different ways to run 3d-dna
 
+**Set the temp directory for java before you run 3D-dna**
+```bash
+_JAVA_OPTIONS=-Djava.io.tmpdir=${TMPDIR}
+```
 **Default run of 3D-dna**
 ```bash
 module load dna_3d;module load parallel;module java;bash run-asm-pipeline.sh Genome.fasta merged_nodups.txt 
