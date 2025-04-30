@@ -1,4 +1,4 @@
-# run 3ddna on arabidopsis genome
+# run 3D-dna on arabidopsis genome
 
 3d-dna is taking your HiC mapping information and converting it into connections between contigs, with contigs that are closer in the genome biologically having more HiC signal between them than different chromosome entities. 
 
@@ -8,7 +8,7 @@
 #starting directory
 /90daydata/shared/rick.masonbrink
 
-#clone the 3ddna current repository
+#clone the 3D-dna current repository
 git clone https://github.com/aidenlab/3d-dna.git
 
 # navigate to cloned folder
@@ -20,12 +20,13 @@ ln -s ../references/Genome.fasta
 ```
 
 
-### Run 3ddna
+### Run 3D-dna
 
-There are many ways to optimize 3ddna. Those options can be seen with sh run-asm-pipeline.sh --help . In my experience I have found the manual scaffolding with Juicebox to be much easier when I use the initial scaffolding that 3ddna produces: Genome.0.hic and Genome.0.assembly. So I typically use the default parameters.
+There are many ways to optimize 3D-dna. Those options can be seen with sh run-asm-pipeline.sh --help . In my experience I have found the manual scaffolding with Juicebox to be much easier when I use the initial scaffolding that 3D-dna produces: Genome.0.hic and Genome.0.assembly. So I typically use the default parameters.
 ```bash
-ml dna_3d; bash run-asm-pipeline.sh -h 
 
+#for basic commands
+ml dna_3d; bash run-asm-pipeline.sh -h 
 
 *****************************************************
 3D de novo assembly: version 180114
@@ -46,44 +47,53 @@ OPTIONS:
 -s|--stage stage                                        Fast forward to later assembly steps, can be polish, split, seal, merge and finalize.
 -h|--help                       Shows this help. Type --help for a full set of options.
 *****************************************************
+
+#for advanced parameters
+ml dna_3d; bash run-asm-pipeline.sh --help
 ```
 
 ### Different ways to run 3d-dna
 
-**Default run of 3ddna**
+**Default run of 3D-dna**
 ```bash
 module load dna_3d;module load parallel;module java;bash run-asm-pipeline.sh Genome.fasta merged_nodups.txt 
 ```
-**3ddna run that will scaffold all contigs >1000bp** <br>
+**3D-dna run that will scaffold all contigs >1000bp** <br>
 Default skips anything smaller than has anything smaller than 15,000 skipped.
 ```bash
 module load dna_3d;module load parallel;module load java;bash run-asm-pipeline.sh -i 1000 Genome.fasta merged_nodups.txt 
 ```
-**3ddna run that allows a large amount of variation in repeat coverage** <br>
-The fewer splits in scaffolds in the final output <br>
-```bash
-module load dna_3d;module load parallel; module load java;bash run-asm-pipeline.sh Genome.fasta merged_nodups.txt --editor-repeat-coverage 20
-```
-**3ddna run that allows a larger variation of repeat coverage**
+**3D-dna run that allows a larger variation of repeat coverage**
 ```bash
 module load dna_3d;module load parallel; module load java;bash run-asm-pipeline.sh --editor-repeat-coverage 20 Genome.fasta merged_nodups.txt 
 ```
-**3Ddna run that trys to assemble unmapped reads with Lastz, if installed**
+**3D-dna run that trys to assemble unmapped reads with Lastz, if installed**
 ```bash
 module load dna_3d;module load parallel;module load java; bash run-asm-pipeline.sh -m diploid Genome.fasta merged_nodups.txt
+```
+**3D-dna run that only uses reads with a mapping quality greater than 30**
+```bash
+module load dna_3d;module load parallel;module load java; bash run-asm-pipeline.sh -q 30 Genome.fasta merged_nodups.txt
+```
+**3D-dna run that increases stringency for misjoin detection for less fragmentation**
+```bash
+module load dna_3d;module load parallel;module load java; bash run-asm-pipeline.sh -q 30 --editor-coarse-stringency 90 --editor-repeat-coverage 20 --splitter-coarse-stringency 80 --splitter-coarse-resolution 250000 --editor-coarse-resolution 250000 --editor-fine-resolution 25000 --editor-coarse-region 500000 Genome.fasta merged_nodups.txt
+```
+**3D-dna run that was the best for this arabidopsis dataset**
+```bash
+module load dna_3d;module load parallel;module load java; bash run-asm-pipeline.sh --editor-coarse-stringency 90 --editor-coarse-resolution 125000 --editor-coarse-region  250000 --editor-repeat-coverage 30 Genome.fasta merged_nodups.txt
 ```
 
 ### Juicebox evaluation 
 
-**Installation (none, just a download)**
+**Installation (none, just a download)** <br>
 Download the juicebox software that is appropriate for your personal computer. https://github.com/aidenlab/Juicebox/wiki/Download <br>
 There is an online version, but if your genome is large or you have lots of reads, it will be very slow to load between zooms.  <br>
 
 
-**Loading your genome into juicebox**
+**Loading your genome into juicebox** <br>
 File, Open, select your HiC file.  Click the plot, otherwise the next step will not work. <br>
 Assembly, Import Map Assembly, Click your .assembly file. This may take a few minutes to load. <br>
-
 
 **Modification of your assembly in Juicebox**
 * Selecting contigs
@@ -101,20 +111,20 @@ Assembly, Import Map Assembly, Click your .assembly file. This may take a few mi
 
 ### How to see and fix misjoins and inversions
 https://gitlab.com/wtsi-grit/rapid-curation/-/blob/main/Interpreting_HiC_Maps_guide.pdf <br>
-<br>
+
 Tip:  If you shift-select a contig and then shift-select another contig and you will lag. Always deselect the contig first by selecting outside of the box.
 <br>
 
-**Saving your work (do it often!)**
+**Saving your work (do it often!)** <br>
 Juicebox can randomly have bugs and close. Make sure that you are regularly exporting your assembly file.   <br>
 Assembly, Export Assembly  -->  the program will automatically rename your .assembly file to .assembly.review. Name it how you like. <br>
 
-**Reloading your unfinished assembly into juicebox for further correction.** 
+**Reloading your unfinished assembly into juicebox for further correction.** <br>
 One extra step is required. After loading HiC, clicking the plot, and loading the original unmodified .assembly file, you need to load your modified assembly file after. Assembly, Load Modified Assembly, select your latest genome.assembly.review file. 
 
-### 3ddna Finalization 
+### 3D-dna Finalization 
 
-This is where 3ddna takes all of your modifications in juicebox and recreates the scaffolded genome. If I am sure that I am done with juicebox, I go ahead and sort the output so that the largest scaffolds will begin with the lowest numbers. This adds 100bp gaps between each contig you scaffolded. The '-s' is to set the stage of assembly to start at. We can put  indicating that we have already done the juiceboxing and want to try to have the cpu see if it can place any of the remaining smaller contigs. 
+This is where 3D-dna takes all of your modifications in juicebox and recreates the scaffolded genome. If I am sure that I am done with juicebox, I go ahead and sort the output so that the largest scaffolds will begin with the lowest numbers. This adds 100bp gaps between each contig you scaffolded. The '-s' is to set the stage of assembly to start at. We can put indicating that we have already done the juiceboxing and want to try to have the cpu see if it can place any of the remaining smaller contigs. 
 
 ```bash
 module load dna_3d;module load java;module load parallel; bash run-asm-pipeline-post-review.sh --sort-output -s seal -i 100 -r Genome.0.review.assembly Genome.fasta merged_nodups.txt
