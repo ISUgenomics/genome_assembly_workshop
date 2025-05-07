@@ -135,6 +135,12 @@ This is where 3D-dna takes all of your modifications in juicebox and recreates t
 mkdir 3ddnaFinalize
 cd 3ddnaFinalize/
 
+#softlink files
+ln -s ../3D_DNA/Genome.0.review.assembly
+ln -s ../3D_DNA/Genome.fasta
+ln -s ../aligned/merged_nodups.txt
+
+#run 3D-dna from the seal stage
 module load dna_3d;module load java;module load parallel; bash run-asm-pipeline-post-review.sh -s seal -r Genome.0.review.assembly Genome.fasta merged_nodups.txt
 
 ../../02_Files/new_Assemblathon.pl Genome_HiC.fasta 
