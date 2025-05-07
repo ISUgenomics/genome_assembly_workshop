@@ -8,10 +8,10 @@
 #starting directory
 /90daydata/shared/rick.masonbrink
 
-#clone the 3D-dna current repository
+#clone the 3D-dna current repository. If 3D-dna is installed as a module on your system you may not need to clone the repo. 
 git clone https://github.com/aidenlab/3d-dna.git
 
-# navigate to cloned folder
+# navigate to cloned folder, or make named folder
 cd 3d-dna
 
 # softlink the files from the juicer run
@@ -56,11 +56,11 @@ ml dna_3d; bash run-asm-pipeline.sh --help
 
 **Set the temp directory for java before you run 3D-dna**
 ```bash
-_JAVA_OPTIONS=-Djava.io.tmpdir=${TMPDIR}
+export _JAVA_OPTIONS=-Djava.io.tmpdir=${TMPDIR}
 ```
 **Default run of 3D-dna**
 ```bash
-module load dna_3d;module load parallel;module java;bash run-asm-pipeline.sh Genome.fasta merged_nodups.txt 
+module load dna_3d;module load parallel;module load java;bash run-asm-pipeline.sh Genome.fasta merged_nodups.txt 
 ```
 **3D-dna run that will scaffold all contigs >1000bp** <br>
 Default skips anything smaller than has anything smaller than 15,000 skipped.
@@ -131,7 +131,61 @@ One extra step is required. After loading HiC, clicking the plot, and loading th
 This is where 3D-dna takes all of your modifications in juicebox and recreates the scaffolded genome. If I am sure that I am done with juicebox, I go ahead and sort the output so that the largest scaffolds will begin with the lowest numbers. This adds 100bp gaps between each contig you scaffolded. The '-s' is to set the stage of assembly to start at. We can put indicating that we have already done the juiceboxing and want to try to have the cpu see if it can place any of the remaining smaller contigs. 
 
 ```bash
-module load dna_3d;module load java;module load parallel; bash run-asm-pipeline-post-review.sh --sort-output -s seal -i 100 -r Genome.0.review.assembly Genome.fasta merged_nodups.txt
+
+mkdir 3ddnaFinalize
+cd 3ddnaFinalize/
+
+module load dna_3d;module load java;module load parallel; bash run-asm-pipeline-post-review.sh -s seal -r Genome.0.review.assembly Genome.fasta merged_nodups.txt
+
+../../02_Files/new_Assemblathon.pl Genome_HiC.fasta 
+
+---------------- Information for assembly 'Genome_HiC.fasta' ----------------
+                                         Number of scaffolds       1546
+                                     Total size of scaffolds  192727589
+                                            Longest scaffold   32344268
+                                           Shortest scaffold      15223
+                                 Number of scaffolds > 1K nt       1546 100.0%
+                                Number of scaffolds > 10K nt       1546 100.0%
+                               Number of scaffolds > 100K nt         25   1.6%
+                                 Number of scaffolds > 1M nt          5   0.3%
+                                Number of scaffolds > 10M nt          5   0.3%
+                                          Mean scaffold size     124662
+                                        Median scaffold size      32910
+                                         N50 scaffold length   22789912
+                                          L50 scaffold count          4
+                                                 scaffold %A      31.43
+                                                 scaffold %C      18.57
+                                                 scaffold %G      18.42
+                                                 scaffold %T      31.57
+                                                 scaffold %N       0.00
+                                         scaffold %non-ACGTN       0.00
+                             Number of scaffold non-ACGTN nt          0
+                Percentage of assembly in scaffolded contigs      69.8%
+              Percentage of assembly in unscaffolded contigs      30.2%
+                      Average number of contigs per scaffold        1.0
+Average length of break (>25 Ns) between contigs in scaffold        500
+                                           Number of contigs       1561
+                              Number of contigs in scaffolds         21
+                          Number of contigs not in scaffolds       1540
+                                       Total size of contigs  192720089
+                                              Longest contig   22927795
+                                             Shortest contig      15223
+                                   Number of contigs > 1K nt       1561 100.0%
+                                  Number of contigs > 10K nt       1561 100.0%
+                                 Number of contigs > 100K nt         37   2.4%
+                                   Number of contigs > 1M nt         13   0.8%
+                                  Number of contigs > 10M nt          6   0.4%
+                                            Mean contig size     123459
+                                          Median contig size      32976
+                                           N50 contig length    9415973
+                                            L50 contig count          7
+                                                   contig %A      31.44
+                                                   contig %C      18.57
+                                                   contig %G      18.42
+                                                   contig %T      31.57
+                                                   contig %N       0.00
+                                           contig %non-ACGTN       0.00
+                               Number of contig non-ACGTN nt          0
 ```
 
 
